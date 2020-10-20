@@ -1,8 +1,9 @@
 // defining urls like json attributes
 const linksArray = [
-    { "name": "Cloudflare", "url": "https://www.cloudflare.com/" },
-    { "name": "Google", "url": "https://www.google.com/" },
-    { "name": "LinkedIn", "url": "https://www.linkedin.com//" }
+	{ "name": "LinkedIn", "url": "https://www.linkedin.com//" },
+    { "name": "Facebook", "url": "https://www.facebook.com/" },
+    { "name": "Instagram", "url": "https://www.instagram.com//" }
+    
 ]
 
 const socialLinks = [
@@ -25,105 +26,105 @@ async function handleRequest(request) {
             headers: { 'content-type': 'application/json' },
         });
     }
-    return getStaticPage();
+    return getHTMLStatic();
 }
 
-class LinkTransformer {
+class URLModifier {
     constructor(links) {
         this.links = links;
     }
 
-    async element(element) {
-        if (element) {
-            let text = '\n';
+async element(id) {
+    if (id) {
+        let content = '\n';
             this.links.forEach((link) => {
-                text += '<a href="';
-                text += link.url;
-                text += '">';
-                text += link.name;
-                text += '</a>\n'
+                content += '<a href="';
+                content += link.url;
+                content += '">';
+                content += link.name;
+                content += '</a>\n'
             })
-            element.setInnerContent(text, { html: true });
+            id.setInnerContent(content, { html: true });
         }
     }
 }
 
-class ProfileTransformer {
-    async element(element) {
-        if (element) {
-            if (element.tagName === "div") {
-                element.removeAttribute("style");
-            } else if (element.tagName === "img") {
-                element.setAttribute("src", "https://avatars0.githubusercontent.com/u/65627251?s=400&u=7136f5e180dbdbada15fd713b01b2998c577f522&v=4");
-            } if (element.tagName === "h1") {
-                element.setInnerContent("Anusha Vakamalla");
+class InfoModifier {
+    async element(id) {
+        if (id) {
+            if (id.tagName === "div") {
+                id.removeAttribute("style");
+            } else if (id.tagName === "img") {
+                id.setAttribute("src", "https://avatars0.githubusercontent.com/u/65627251?s=400&u=7136f5e180dbdbada15fd713b01b2998c577f522&v=4");
+            } if (id.tagName === "h1") {
+                id.setInnerContent("Anusha Vakamalla");
             }
         }
     }
 }
 
-class SocialTransformer {
+class SocialModifier {
     constructor(links) {
         this.links = links;
     }
 
-    async element(element) {
-        if (element) {
-            element.removeAttribute("style");
-            let text = '\n';
+    async element(id) {
+        if (id) {
+            id.removeAttribute("style");
+            let content = '\n';
             this.links.forEach((link) => {
-                text += '<a href="';
-                text += link.url;
-                text += '">';
-                text += '\n<img style="filter:invert(100%);" src="' + link.svgUrl + '" alt="' + link.name + '">';
-                text += '</a>\n'
+                content += '<a href="';
+                content += link.url;
+                content += '">';
+                content += '\n<img style="filter:invert(100%);" src="' + link.svgUrl + '" alt="' + link.name + '">';
+                content += '</a>\n'
             })
-            element.setInnerContent(text, { html: true });
+            id.setInnerContent(content, { html: true });
         }
     }
 }
 
-class PageTransformer {
-    async element(element) {
-        if (element) {
-            if (element.tagName === "body") {
-                element.setAttribute("class", "bg-green-900");
-            } else if (element.tagName === "title") {
-                element.setInnerContent("Anusha Vakamalla's Page");
+class WebModifier {
+    async element(id) {
+        if (id) {
+            if (id.tagName === "body") {
+                id.setAttribute("class", "bg-green-900");
+            } else if (id.tagName === "title") {
+                id.setInnerContent("Anusha Vakamalla's Page");
             }
         }
     }
 }
 
-const linkTransformer = new HTMLRewriter().on('div#links', new LinkTransformer(linksArray));
+const urlModifier = new HTMLRewriter().on('div#links', new URLModifier(linksArray));
 
-const profileTransformer = new HTMLRewriter().on('div#profile', new ProfileTransformer());
-const profileImageTransformer = new HTMLRewriter().on('img#avatar', new ProfileTransformer());
-const profileNameTransformer = new HTMLRewriter().on('h1#name', new ProfileTransformer());
+const infoModifier = new HTMLRewriter().on('div#profile', new InfoModifier());
+const infoImageModifier = new HTMLRewriter().on('img#avatar', new InfoModifier());
+const infoNameModifier = new HTMLRewriter().on('h1#name', new InfoModifier());
 
-const socialTransformer = new HTMLRewriter().on('div#social', new SocialTransformer(socialLinks));
+const socialModifier = new HTMLRewriter().on('div#social', new SocialModifier(socialLinks));
 
-const pageTransformer = new HTMLRewriter().on('body', new PageTransformer());
-const titleTransformer = new HTMLRewriter().on('title', new PageTransformer());
+const webModifier = new HTMLRewriter().on('body', new WebModifier());
+const headingModifier = new HTMLRewriter().on('title', new WebModifier());
 
-async function getStaticPage() {
-    let staticPage = await fetch('https://static-links-page.signalnerve.workers.dev')
+async function getHTMLStatic() {
+    let HTMLstatic = await fetch('https://static-links-page.signalnerve.workers.dev')
         .then((response) => {
             if (response.status == 200) {
                 return response;
             } else new Response('Something went wrong!', { status: 500 });
         })
+    
+    HTMLstatic = urlModifier.transform(HTMLstatic);
+    HTMLstatic = infoImageModifier.transform(HTMLstatic);
+    HTMLstatic = infoNameModifier.transform(HTMLstatic);
+    HTMLstatic = infoModifier.transform(HTMLstatic);
+   
 
-    staticPage = linkTransformer.transform(staticPage);
+    HTMLstatic = socialModifier.transform(HTMLstatic);
 
-    staticPage = profileTransformer.transform(staticPage);
-    staticPage = profileImageTransformer.transform(staticPage);
-    staticPage = profileNameTransformer.transform(staticPage);
+    HTMLstatic = webModifier.transform(HTMLstatic);
+    HTMLstatic = headingModifier.transform(HTMLstatic);
 
-    staticPage = socialTransformer.transform(staticPage);
-
-    staticPage = pageTransformer.transform(staticPage);
-    staticPage = titleTransformer.transform(staticPage);
-
-    return staticPage;
+    return HTMLstatic;
 }
